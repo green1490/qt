@@ -23,6 +23,13 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+
+    //https://stackoverflow.com/questions/27285889/how-do-you-serialize-a-qmap
+    QString fileName = "data.txt";
+    QFile myFile(fileName);
+    QDataStream out(&myFile);
+    out << files;
+
 }
 
 
@@ -60,6 +67,6 @@ void MainWindow::on_remove_pushButton_2_clicked()
 
 void MainWindow::on_MainWindow_destroyed()
 {
-    //https://stackoverflow.com/questions/27285889/how-do-you-serialize-a-qmap
+
 }
 
