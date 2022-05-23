@@ -4,5 +4,8 @@
         <file>minus.png</file>
         <file>search.png</file>
         <file>plus.ico</file>
+        <file>Remover.qss</file>
+        <file>Obit.qss</file>
+        <file>Incrypt.qss</file>
     </qresource>
 </RCC>

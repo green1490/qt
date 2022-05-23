@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>660</width>
+    <width>793</width>
     <height>362</height>
    </rect>
   </property>
@@ -226,14 +226,14 @@
       <item>
        <widget class="QPushButton" name="tallozas_pushButton">
         <property name="text">
-         <string>Tallózás</string>
+         <string>Browse</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="view_pushButton">
         <property name="text">
-         <string>Megtekintés</string>
+         <string>View</string>
         </property>
        </widget>
       </item>
@@ -259,15 +259,28 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>660</width>
-     <height>25</height>
+     <width>793</width>
+     <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuSetting">
+    <property name="title">
+     <string>Setting</string>
+    </property>
+    <addaction name="actionLanguage"/>
+    <addaction name="actionColor"/>
+   </widget>
+   <addaction name="menuSetting"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionlol">
+  <action name="actionLanguage">
    <property name="text">
-    <string>lol</string>
+    <string>Language</string>
+   </property>
+  </action>
+  <action name="actionColor">
+   <property name="text">
+    <string>Theme</string>
    </property>
   </action>
  </widget>

@@ -15,16 +15,15 @@
 #include <qlabel.h>
 #include <QMultiMap>
 #include <iostream>
+#include <qtranslator.h>
+#include <QHBoxLayout>
+#include <qcombobox.h>
+#include <QSettings>
 
 //TO DO
-//menüsor
-//beállítások
-//kétnyelvű
 //hordozható változat
-//context menű a megjegyzésre
-//megjegyzés tőrlése
-//leírás mentése
 //a túl mérezett kép label widget nem lehet vissza méretezni
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -57,10 +56,19 @@ private slots:
 
     void on_checkBox_stateChanged(int arg1);
 
+    void on_actionLanguage_triggered();
+
+    void on_actionColor_triggered();
+
 private:
     Ui::MainWindow *ui;
     QMap<QString,QString> files;
     QMap<QString,QString> description;
     QMultiMap<QString,QString> tags;
+    QTranslator translator;
+public:
+    QSettings setting{"My org","imagie viewer"};
+
+
 };
 #endif // MAINWINDOW_H

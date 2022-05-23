@@ -7,17 +7,19 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-
-    QTranslator translator;
-    const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString &locale : uiLanguages) {
-        const QString baseName = "dkc1dh_" + QLocale(locale).name();
-        if (translator.load(":/i18n/" + baseName)) {
-            a.installTranslator(&translator);
-            break;
-        }
-    }
     MainWindow w;
+
+
+    if(w.setting.value("gui/Theme") != "Default")
+    {
+        QFile styleShett(":/icons/" + w.setting.value("gui/Theme").toString() + ".qss");
+        styleShett.open(QFile::ReadOnly);
+        QString style = QLatin1String(styleShett.readAll());
+        a.setStyleSheet(style);
+        w.show();
+        return a.exec();
+    }
+
     w.show();
     return a.exec();
 }

@@ -8,8 +8,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
 
-
-
     ui->add_pushButton->setIcon(QIcon(":/icons/plus.ico"));
     ui->remove_pushButton_2->setIcon(QIcon(":/icons/minus.png"));
     ui->search_pushButton_5->setIcon(QIcon(":/icons/search.png"));
@@ -21,8 +19,36 @@ MainWindow::MainWindow(QWidget *parent)
     ui->listWidget->setResizeMode(QListView::Adjust);
 
     ui->imageLabel->setAlignment(Qt::AlignCenter);
-    //lehesen open foldert a menüben
-    //context menüben tag-et vagy szöveget adni
+
+    if(setting.value("gui/language").toString() == "hungarian")
+    {
+    const QStringList uiLanguages = QLocale::system().uiLanguages();
+        for (const QString &locale : uiLanguages) {
+            const QString baseName = "dkc1dh_" + QLocale(locale).name();
+            if (translator.load(":/i18n/" + baseName)) {
+                QCoreApplication::installTranslator(&translator);
+                break;
+            }
+        }
+        ui->retranslateUi(this);
+            }
+    {
+        QFile file_tag("descreption.txt");
+        file_tag.open(QIODevice::ReadOnly);
+
+        QTextStream in(&file_tag);
+        while(!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList fields = line.split(",");
+            if(fields[0] != "" && fields[1] != "")
+            {
+                description.insert(fields[0],fields[1]);
+            }
+        }
+        file_tag.close();
+        qDebug() << "sikeres leírás beolvasás\n";
+    }
+
 
     QString settings;
     QFile file{"data.json"};
@@ -42,9 +68,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     for(QMap<QString,QString>::iterator iter = files.begin();iter != files.end();++iter)
     {
-        QListWidgetItem *it = new QListWidgetItem(iter.key());
-        it->setIcon(QIcon(iter.value()));
-        ui->listWidget->addItem(it);
+
+            QListWidgetItem *it = new QListWidgetItem(iter.key());
+            it->setIcon(QIcon(iter.value()));
+            it->setToolTip(description[iter.key()]);
+            ui->listWidget->addItem(it);
+
     }
     {
         QFile file_tag("tag.txt");
@@ -54,22 +83,10 @@ MainWindow::MainWindow(QWidget *parent)
         while(!in.atEnd()) {
             QString line = in.readLine();
             QStringList fields = line.split(",");
-            tags.insert(fields[0],fields[1]);
+            if (fields[0] != "" && fields[1] != "")
+                tags.insert(fields[0],fields[1]);
         }
         file_tag.close();
-    }
-    {
-        QFile file_tag("descreption.txt");
-        file_tag.open(QIODevice::ReadOnly);
-
-        QTextStream in(&file_tag);
-        while(!in.atEnd()) {
-            QString line = in.readLine();
-            QStringList fields = line.split(",");
-            description.insert(fields[0],fields[1]);
-        }
-        file_tag.close();
-        qDebug() << "sikeres leírás beolvasás\n";
     }
 }
 
@@ -125,7 +142,8 @@ MainWindow::~MainWindow()
        QMap<QString,QString>::iterator item;
        for (item = description.begin(); item != description.end(); ++item)
        {
-           out << item.key() + "," + item.value() + '\n';
+           if (item.key() != "" && item.value() != "")
+                out << item.key() + "," + item.value() + '\n';
        }
        qDebug() << "sikeres kiírás a leírásnak\n";
        descreption_file.close();
@@ -144,10 +162,13 @@ void MainWindow::on_add_pushButton_clicked()
 
     if(path != "")
     {
-        QListWidgetItem *it = new QListWidgetItem(file);
-        it->setIcon(QIcon(path));
-        ui->listWidget->addItem(it);
-        files[file] = path;
+
+            QListWidgetItem *it = new QListWidgetItem(file);
+            it->setIcon(QIcon(path));
+            ui->listWidget->addItem(it);
+            files[file] = path;
+
+
     }
 
 }
@@ -197,14 +218,14 @@ void MainWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)
         {
             auto currentItemText = ui->listWidget->currentItem()->text();
             QMenu *menu=new QMenu(this);
-            auto newTagAction = new QAction("New description", this);
+            auto newTagAction = new QAction(tr("New description"), this);
             menu->addAction(newTagAction);
 
             connect(newTagAction,&QAction::triggered ,[this](){
                 QWidget *wdg = new QWidget;
                 auto *layout = new QVBoxLayout();
                 auto *lineEditContext = new QLineEdit();
-                auto *button = new QPushButton("Save");
+                auto *button = new QPushButton(tr("Save"));
                 QString currentItemText("");
                 if(ui->listWidget->currentItem() != NULL)
                     currentItemText = ui->listWidget->currentItem()->text();
@@ -215,7 +236,12 @@ void MainWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)
 
                 connect(button,&QPushButton::clicked,[this,currentItemText,lineEditContext]{
                     if(currentItemText != "")
+                    {
                         description.insert(currentItemText, lineEditContext->text());
+                        auto current = ui->listWidget->currentItem();
+                        current->setToolTip(lineEditContext->text());
+                    }
+
                     lineEditContext->clear();
                 });
 
@@ -225,7 +251,7 @@ void MainWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)
             });
 
 
-            auto action2 = new QAction("Add/remove tags", this);
+            auto action2 = new QAction(tr("Add/remove tags"), this);
             menu->addAction(action2);
             connect(action2,&QAction::triggered ,[&,currentItemText](){
                 QWidget *wdg = new QWidget;
@@ -241,7 +267,7 @@ void MainWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)
                 buttonLayout->addWidget(removeButton);
                 layout->addLayout(buttonLayout);
 
-                for(auto item:tags.values(currentItemText))
+                for(auto &item:tags.values(currentItemText))
                 {
                     listWidgetContext->addItem(item);
                 }
@@ -286,6 +312,24 @@ void MainWindow::on_listWidget_customContextMenuRequested(const QPoint &pos)
                 wdg->show();
             });
 
+            auto deleteDescription = new QAction(tr("Delete description"), this);
+            menu->addAction(deleteDescription);
+            connect(deleteDescription,&QAction::triggered ,[this,menu](){
+                auto currentItemToolTip = ui->listWidget->currentItem()->toolTip();
+                auto keys = description.keys();
+                for(auto &key:keys)
+                {
+                    //kétszer nyomod meg akkor crashel
+                    if(description[key] == currentItemToolTip && description.contains(key))
+                    {
+                        description.remove(key);
+                    }
+
+                }
+                ui->listWidget->currentItem()->setToolTip("");
+
+
+            });
 
             menu->popup(ui->listWidget->viewport()->mapToGlobal(pos));
         }
@@ -321,7 +365,9 @@ void MainWindow::on_search_pushButton_5_clicked()
             {
                auto listItem = new QListWidgetItem;
                listItem->setIcon(QIcon(files.value(*item)));
-               listItem->setText(*item);
+               listItem->setToolTip(description[*item]);
+                listItem->setText(*item);
+
                ui->listWidget->addItem(listItem);
            }
         }
@@ -338,7 +384,11 @@ void MainWindow::on_search_pushButton_5_clicked()
             {
                 auto listItem = new QListWidgetItem;
                 listItem->setIcon(QIcon(files.value(item.key())));
-                listItem->setText(item.key());
+
+                    listItem->setText(item.key());
+
+
+                listItem->setToolTip(description[item.key()]);
                 ui->listWidget->addItem(listItem);
             }
         }
@@ -354,7 +404,10 @@ void MainWindow::on_search_pushButton_5_clicked()
             {
                 auto listItem = new QListWidgetItem;
                 listItem->setIcon(QIcon(files.value(item.key())));
-                listItem->setText(item.key());
+                listItem->setToolTip(description[item.key()]);
+
+                    listItem->setText(item.key());
+
                 ui->listWidget->addItem(listItem);
             }
         }
@@ -372,7 +425,10 @@ void MainWindow::on_lineEdit_textEdited(const QString &arg1)
        {
            auto listItem = new QListWidgetItem;
             listItem->setIcon(QIcon(item.value()));
-            listItem->setText(item.key());
+
+                listItem->setText(item.key());
+
+            listItem->setToolTip(description[item.key()]);
             ui->listWidget->addItem(listItem);
         }
     }
@@ -389,6 +445,7 @@ void MainWindow::on_descriptioncheckBox_stateChanged(int arg1)
     {
         ui->checkBox->setCheckable(true);
     }
+
 }
 
 
@@ -403,4 +460,89 @@ void MainWindow::on_checkBox_stateChanged(int arg1)
         ui->descriptioncheckBox->setCheckable(true);
     }
 }
+
+
+void MainWindow::on_actionLanguage_triggered()
+{
+//    auto *dialogLanguageSetting = new DialogLanguageSetting(this);
+
+//    dialogLanguageSetting->show();
+    auto *dialogLanguageSetting = new QDialog;
+    dialogLanguageSetting->setWindowTitle(tr("Language setting"));
+
+    auto *layout = new QHBoxLayout;
+    auto label = new QLabel(tr("Language"));
+    auto* comboBox = new QComboBox(this);
+    comboBox->addItem(tr("Hungarian"));
+    comboBox->addItem(tr("English"));
+
+
+    layout->addWidget(label);
+    layout->addWidget(comboBox);
+    //mentse a jelenlegi nyelvet
+    connect(comboBox,&QComboBox::currentTextChanged,[this,comboBox,label,dialogLanguageSetting](){
+        if (comboBox->currentText() == tr("English"))
+        {
+            QCoreApplication::removeTranslator(&translator);
+            setting.setValue("gui/language","english");
+        }
+        else
+        {
+
+            const QStringList uiLanguages = QLocale::system().uiLanguages();
+            for (const QString &locale : uiLanguages)
+            {
+                const QString baseName = "dkc1dh_" + QLocale(locale).name();
+                if (translator.load(":/i18n/" + baseName))
+                {
+                    QCoreApplication::installTranslator(&translator);
+                    setting.setValue("gui/language","hungarian");
+                    break;
+                }
+                qDebug() << translator.language();
+            }
+
+        }
+        ui->retranslateUi(this);
+        dialogLanguageSetting->close();
+
+    });
+
+    if(comboBox->currentText() == "Hungarian")
+        comboBox->setCurrentIndex(1);
+    dialogLanguageSetting->setLayout(layout);
+    dialogLanguageSetting->layout()->setSizeConstraint( QLayout::SetFixedSize );
+    dialogLanguageSetting->setModal(false);
+    dialogLanguageSetting->exec();
+}
+
+
+void MainWindow::on_actionColor_triggered()
+{
+    auto *dialogColourSetting = new QDialog;
+    auto *layout = new QHBoxLayout;
+    auto* colourSchemeLabel = new QLabel(tr("Theme scheme:"));
+    auto* comboBox = new QComboBox(this);
+    comboBox->addItem("Remover");
+    comboBox->addItem("Obit");
+    comboBox->addItem("Incrypt");
+    comboBox->addItem("Default");
+    comboBox->setCurrentText(setting.value("gui/Theme").toString());
+    connect(comboBox,&QComboBox::currentTextChanged,[this,comboBox](){
+        setting.setValue("gui/Theme",comboBox->currentText());
+    });
+
+
+    layout->addWidget(colourSchemeLabel);
+    layout->addWidget(comboBox);
+
+    dialogColourSetting->setWindowTitle(tr("Theme setting"));
+    dialogColourSetting->setLayout(layout);
+    dialogColourSetting->layout()->setSizeConstraint( QLayout::SetFixedSize );
+
+    dialogColourSetting->setModal(false);
+    dialogColourSetting->exec();
+}
+
+
 
